@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Optical Link Design & Analysis Dashboard — 21ECO105T</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --rose: #B76E79;
+    --rose-light: #d4939b;
+    --rose-dim: rgba(183,110,121,0.18);
+    --rose-glow: rgba(183,110,121,0.35);
+    --charcoal: #2C3E50;
+    --charcoal-light: #3d5166;
+    --charcoal-dark: #1a2535;
+    --white: #FFFFFF;
+    --glass: rgba(255,255,255,0.06);
+    --glass-border: rgba(255,255,255,0.12);
+    --text-primary: #f0e8ea;
+    --text-secondary: rgba(240,232,234,0.6);
+    --success: #4ecdc4;
+    --danger: #e74c3c;
+    --warning: #f39c12;
+    --sidebar-w: 320px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    font-family: 'DM Sans', sans-serif;
+    background: var(--charcoal-dark);
+    color: var(--text-primary);
+    overflow: hidden;
+  }
+
+  /* Animated background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 15% 20%, rgba(183,110,121,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 60% at 85% 80%, rgba(44,62,80,0.8) 0%, transparent 60%),
+      linear-gradient(135deg, #1a2535 0%, #2C3E50 50%, #1e2d3d 100%);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* Subtle grid texture */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(183,110,121,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(183,110,121,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  #app {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── SIDEBAR ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    height: 100vh;
+    overflow-y: auto;
+    background: rgba(26, 37, 53, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-right: 1px solid var(--glass-border);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--rose-dim) transparent;
+  }
+
+  #sidebar::-webkit-scrollbar { width: 4px; }
+  #sidebar::-webkit-scrollbar-thumb { background: var(--rose-dim); border-radius: 4px; }
+
+  .sidebar-header {
+    padding: 28px 24px 20px;
+    border-bottom: 1px solid var(--glass-border);
+    background: rgba(183,110,121,0.08);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    backdrop-filter: blur(20px);
+  }
+
+  .sidebar-header .course-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--rose);
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  .sidebar-header h2 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--white);
+    line-height: 1.3;
+  }
+
+  .sidebar-header p {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+
+  .section-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--rose);
+    padding: 20px 24px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--rose-dim);
+  }
+
+  .input-group {
+    padding: 0 20px 6px;
+  }
+
+  .input-group label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    font-weight: 300;
+  }
+
+  .input-group label .val {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--rose-light);
+    font-weight: 700;
+    min-width: 55px;
+    text-align: right;
+  }
+
+  .slider-wrap {
+    position: relative;
+    height: 28px;
+    display: flex;
+    align-items: center;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(to right, var(--rose) var(--pct, 0%), rgba(255,255,255,0.1) var(--pct, 0%));
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--rose);
+    border: 2px solid var(--white);
+    box-shadow: 0 0 10px var(--rose-glow);
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+
+  input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 18px var(--rose-glow);
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--rose);
+    border: 2px solid var(--white);
+    box-shadow: 0 0 10px var(--rose-glow);
+    cursor: pointer;
+  }
+
+  .number-input {
+    width: 100%;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    padding: 9px 14px;
+    color: var(--white);
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .number-input:focus {
+    border-color: var(--rose);
+    background: rgba(183,110,121,0.1);
+  }
+
+  .sidebar-footer {
+    padding: 16px 20px 24px;
+    margin-top: auto;
+    border-top: 1px solid var(--glass-border);
+  }
+
+  .reset-btn {
+    width: 100%;
+    padding: 11px;
+    background: transparent;
+    border: 1px solid var(--rose-dim);
+    border-radius: 10px;
+    color: var(--rose-light);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .reset-btn:hover {
+    background: var(--rose-dim);
+    border-color: var(--rose);
+    color: var(--white);
+  }
+
+  /* ── MAIN PANEL ── */
+  #main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px 28px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--rose-dim) transparent;
+  }
+
+  #main::-webkit-scrollbar { width: 4px; }
+  #main::-webkit-scrollbar-thumb { background: var(--rose-dim); border-radius: 4px; }
+
+  /* Top bar */
+  .top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .top-bar h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--white);
+  }
+
+  .top-bar h1 span {
+    color: var(--rose);
+  }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--success);
+    background: rgba(78,205,196,0.1);
+    border: 1px solid rgba(78,205,196,0.25);
+    border-radius: 20px;
+    padding: 6px 14px;
+  }
+
+  .live-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--success);
+    animation: pulse 1.4s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.85); }
+  }
+
+  /* Status cards row */
+  .cards-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    flex-shrink: 0;
+  }
+
+  .stat-card {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 20px 22px;
+    backdrop-filter: blur(16px);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--rose), transparent);
+    opacity: 0.6;
+  }
+
+  .stat-card .card-label {
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+  }
+
+  .stat-card .card-value {
+    font-family: 'Space Mono', monospace;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--white);
+    line-height: 1;
+    transition: color 0.4s;
+  }
+
+  .stat-card .card-unit {
+    font-size: 12px;
+    color: var(--rose-light);
+    margin-top: 4px;
+  }
+
+  .stat-card .card-icon {
+    position: absolute;
+    right: 18px;
+    top: 18px;
+    font-size: 22px;
+    opacity: 0.25;
+  }
+
+  /* Verdict badge */
+  .verdict-wrap {
+    flex-shrink: 0;
+  }
+
+  .verdict-badge {
+    border-radius: 16px;
+    padding: 20px 28px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    border: 1px solid;
+    backdrop-filter: blur(16px);
+    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .verdict-badge::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: inherit;
+    filter: blur(30px);
+    opacity: 0.15;
+    z-index: -1;
+  }
+
+  .verdict-badge.success {
+    background: rgba(78,205,196,0.1);
+    border-color: rgba(78,205,196,0.35);
+  }
+
+  .verdict-badge.danger {
+    background: rgba(231,76,60,0.12);
+    border-color: rgba(231,76,60,0.35);
+  }
+
+  .verdict-badge.warning {
+    background: rgba(243,156,18,0.1);
+    border-color: rgba(243,156,18,0.35);
+  }
+
+  .verdict-icon {
+    font-size: 36px;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 12px currentColor);
+  }
+
+  .verdict-text h3 {
+    font-family: 'Space Mono', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+  }
+
+  .verdict-text p {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .verdict-badge.success .verdict-text h3 { color: var(--success); }
+  .verdict-badge.danger .verdict-text h3 { color: var(--danger); }
+  .verdict-badge.warning .verdict-text h3 { color: var(--warning); }
+
+  .verdict-meta {
+    margin-left: auto;
+    text-align: right;
+  }
+
+  .verdict-meta .meta-val {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .verdict-meta .meta-val span {
+    color: var(--white);
+    font-weight: 700;
+  }
+
+  /* Chart section */
+  .chart-section {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 22px;
+    backdrop-filter: blur(16px);
+    flex: 1;
+    min-height: 260px;
+    position: relative;
+  }
+
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 18px;
+  }
+
+  .chart-header h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--white);
+    letter-spacing: -0.3px;
+  }
+
+  .chart-header p {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+
+  .chart-legend {
+    display: flex;
+    gap: 14px;
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+    color: var(--text-secondary);
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .legend-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+  }
+
+  .chart-canvas-wrap {
+    position: relative;
+    height: 220px;
+  }
+
+  /* Dispersion section */
+  .disp-section {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 22px;
+    backdrop-filter: blur(16px);
+    flex-shrink: 0;
+  }
+
+  .disp-section h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--white);
+    margin-bottom: 14px;
+  }
+
+  .disp-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+
+  .disp-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 14px 16px;
+    text-align: center;
+  }
+
+  .disp-card .d-label {
+    font-size: 9px;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+  }
+
+  .disp-card .d-value {
+    font-family: 'Space Mono', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--white);
+    transition: color 0.3s;
+  }
+
+  .disp-card .d-unit {
+    font-size: 10px;
+    color: var(--text-secondary);
+    margin-top: 3px;
+  }
+
+  /* Formula strip */
+  .formula-strip {
+    background: rgba(183,110,121,0.07);
+    border: 1px solid var(--rose-dim);
+    border-radius: 12px;
+    padding: 12px 20px;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .formula-strip .f-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--rose);
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+
+  .formula-strip .f-eq {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--text-secondary);
+    flex: 1;
+  }
+
+  .formula-strip .f-eq strong {
+    color: var(--rose-light);
+  }
+
+  /* Responsive tweak */
+  @media (max-width: 900px) {
+    :root { --sidebar-w: 260px; }
+    .cards-row { grid-template-columns: 1fr 1fr; }
+    .disp-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* Animations */
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .top-bar, .cards-row, .verdict-wrap, .chart-section, .disp-section, .formula-strip {
+    animation: fadeSlideIn 0.45s ease both;
+  }
+  .cards-row   { animation-delay: 0.05s; }
+  .verdict-wrap{ animation-delay: 0.10s; }
+  .chart-section{ animation-delay: 0.15s; }
+  .disp-section { animation-delay: 0.20s; }
+  .formula-strip{ animation-delay: 0.25s; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ══════════════ SIDEBAR ══════════════ -->
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <span class="course-tag">21ECO105T — Optical Communications</span>
+      <h2>Link Design & Analysis</h2>
+      <p>Configure parameters below — dashboard updates live</p>
+    </div>
+
+    <!-- Power Budget Inputs -->
+    <div class="section-label">⚡ Power Budget</div>
+
+    <div class="input-group">
+      <label>Transmit Power (P<sub>tx</sub>) <span class="val" id="val-ptx">0 dBm</span></label>
+      <div class="slider-wrap">
+        <input type="range" id="sl-ptx" min="-10" max="10" step="0.5" value="0">
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>Fiber Length (L) <span class="val" id="val-len">50 km</span></label>
+      <div class="slider-wrap">
+        <input type="range" id="sl-len" min="1" max="200" step="1" value="50">
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>Attenuation (α) <span class="val" id="val-att">0.35 dB/km</span></label>
+      <div class="slider-wrap">
+        <input type="range" id="sl-att" min="0.1" max="1.0" step="0.01" value="0.35">
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>No. of Splices (N<sub>s</sub>) <span class="val" id="val-spl">3</span></label>
+      <div class="slider-wrap">
+        <input type="range" id="sl-spl" min="0" max="30" step="1" value="3">
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>No. of Connectors (N<sub>c</sub>) <span class="val" id="val-con">2</span></label>
+      <div class="slider-wrap">
+        <input type="range" id="sl-con" min="0" max="20" step="1" value="2">
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>System Margin <span class="val" id="val-mar">3.0 dB</span></label>
+      <div class="slider-wrap">
+        <input type="range" id="sl-mar" min="0" max="10" step="0.5" value="3">
+      </div>
+    </div>
+
+    <!-- Dispersion Inputs -->
+    <div class="section-label">〜 Dispersion</div>
+
+    <div class="input-group">
+      <label>Bit Rate (B) <span class="val" id="val-br">2.5 Gbps</span></label>
+      <div class="slider-wrap">
+        <input type="range" id="sl-br" min="0.1" max="100" step="0.1" value="2.5">
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>Dispersion Coeff (D) <span class="val" id="val-dc">17 ps/nm·km</span></label>
+      <div class="slider-wrap">
+        <input type="range" id="sl-dc" min="0" max="100" step="0.5" value="17">
+      </div>
+    </div>
+
+    <div class="input-group" style="margin-bottom:6px;">
+      <label style="margin-bottom:8px;">Source Spectral Width (Δλ) <span class="val" id="val-sw">1 nm</span></label>
+      <input type="range" id="sl-sw" min="0.01" max="10" step="0.01" value="1" style="width:100%">
+    </div>
+
+    <div class="sidebar-footer">
+      <button class="reset-btn" onclick="resetAll()">↺ RESET DEFAULTS</button>
+    </div>
+  </aside>
+
+  <!-- ══════════════ MAIN PANEL ══════════════ -->
+  <main id="main">
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <h1>Optical <span>Link</span> Dashboard</h1>
+      <div class="live-badge">
+        <div class="live-dot"></div>
+        LIVE ANALYSIS
+      </div>
+    </div>
+
+    <!-- Formula Strip -->
+    <div class="formula-strip">
+      <span class="f-label">Formulas</span>
+      <span class="f-eq"><strong>TotalLoss</strong> = L×α + N<sub>s</sub>×0.1 + N<sub>c</sub>×0.5 + Margin</span>
+      <span class="f-eq"><strong>P<sub>rx</sub></strong> = P<sub>tx</sub> − TotalLoss</span>
+      <span class="f-eq"><strong>Broadening</strong> = D×L×Δλ &nbsp;|&nbsp; <strong>T</strong> = 1/B</span>
+    </div>
+
+    <!-- Status Cards -->
+    <div class="cards-row">
+      <div class="stat-card">
+        <div class="card-icon">📉</div>
+        <div class="card-label">Total Attenuation</div>
+        <div class="card-value" id="card-loss">—</div>
+        <div class="card-unit">dB</div>
+      </div>
+      <div class="stat-card">
+        <div class="card-icon">📡</div>
+        <div class="card-label">Power at Receiver</div>
+        <div class="card-value" id="card-prx">—</div>
+        <div class="card-unit">dBm</div>
+      </div>
+      <div class="stat-card">
+        <div class="card-icon">〜</div>
+        <div class="card-label">Pulse Broadening</div>
+        <div class="card-value" id="card-disp">—</div>
+        <div class="card-unit">ps</div>
+      </div>
+    </div>
+
+    <!-- Verdict -->
+    <div class="verdict-wrap">
+      <div class="verdict-badge" id="verdict-badge">
+        <div class="verdict-icon" id="verdict-icon">—</div>
+        <div class="verdict-text">
+          <h3 id="verdict-title">CALCULATING…</h3>
+          <p id="verdict-desc">Adjust parameters to begin analysis</p>
+        </div>
+        <div class="verdict-meta">
+          <div class="meta-val">P<sub>rx</sub> = <span id="vm-prx">—</span> dBm</div>
+          <div class="meta-val" style="margin-top:4px;">Broadening = <span id="vm-disp">—</span> ps</div>
+          <div class="meta-val" style="margin-top:4px;">Bit Period T = <span id="vm-T">—</span> ps</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="chart-section">
+      <div class="chart-header">
+        <div>
+          <h3>Signal Power vs. Distance</h3>
+          <p>Optical power degradation along the fiber link</p>
+        </div>
+        <div class="chart-legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#B76E79;"></div>Signal Power
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:rgba(231,76,60,0.7);border:1px dashed #e74c3c;"></div>Rx Limit (−30 dBm)
+          </div>
+        </div>
+      </div>
+      <div class="chart-canvas-wrap">
+        <canvas id="linkChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Dispersion Detail -->
+    <div class="disp-section">
+      <h3>Dispersion Analysis</h3>
+      <div class="disp-grid">
+        <div class="disp-card">
+          <div class="d-label">Bit Period T</div>
+          <div class="d-value" id="d-T">—</div>
+          <div class="d-unit">ps</div>
+        </div>
+        <div class="disp-card">
+          <div class="d-label">Pulse Broadening</div>
+          <div class="d-value" id="d-broad">—</div>
+          <div class="d-unit">ps</div>
+        </div>
+        <div class="disp-card">
+          <div class="d-label">Broadening / T</div>
+          <div class="d-value" id="d-ratio">—</div>
+          <div class="d-unit">ratio</div>
+        </div>
+        <div class="disp-card">
+          <div class="d-label">Dispersion Status</div>
+          <div class="d-value" id="d-status" style="font-size:13px;padding-top:4px;">—</div>
+          <div class="d-unit">&nbsp;</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ── State ──
+const defaults = {
+  ptx: 0, len: 50, att: 0.35,
+  spl: 3, con: 2, mar: 3,
+  br: 2.5, dc: 17, sw: 1
+};
+
+let state = { ...defaults };
+
+// ── Slider bindings ──
+const sliders = [
+  { id: 'sl-ptx',  key: 'ptx', label: 'val-ptx',  fmt: v => `${(+v).toFixed(1)} dBm` },
+  { id: 'sl-len',  key: 'len', label: 'val-len',  fmt: v => `${v} km` },
+  { id: 'sl-att',  key: 'att', label: 'val-att',  fmt: v => `${(+v).toFixed(2)} dB/km` },
+  { id: 'sl-spl',  key: 'spl', label: 'val-spl',  fmt: v => `${v}` },
+  { id: 'sl-con',  key: 'con', label: 'val-con',  fmt: v => `${v}` },
+  { id: 'sl-mar',  key: 'mar', label: 'val-mar',  fmt: v => `${(+v).toFixed(1)} dB` },
+  { id: 'sl-br',   key: 'br',  label: 'val-br',   fmt: v => `${(+v).toFixed(1)} Gbps` },
+  { id: 'sl-dc',   key: 'dc',  label: 'val-dc',   fmt: v => `${v} ps/nm·km` },
+  { id: 'sl-sw',   key: 'sw',  label: 'val-sw',   fmt: v => `${(+v).toFixed(2)} nm` },
+];
+
+function updateSliderBg(el) {
+  const min = parseFloat(el.min);
+  const max = parseFloat(el.max);
+  const val = parseFloat(el.value);
+  const pct = ((val - min) / (max - min)) * 100;
+  el.style.setProperty('--pct', pct + '%');
+}
+
+sliders.forEach(({ id, key, label, fmt }) => {
+  const el = document.getElementById(id);
+  updateSliderBg(el);
+  el.addEventListener('input', () => {
+    state[key] = parseFloat(el.value);
+    document.getElementById(label).textContent = fmt(el.value);
+    updateSliderBg(el);
+    compute();
+  });
+});
+
+// ── Chart setup ──
+const ctx = document.getElementById('linkChart').getContext('2d');
+const chart = new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: [],
+    datasets: [
+      {
+        label: 'Signal Power (dBm)',
+        data: [],
+        borderColor: '#B76E79',
+        backgroundColor: 'rgba(183,110,121,0.12)',
+        borderWidth: 2.5,
+        pointRadius: 0,
+        pointHoverRadius: 5,
+        pointHoverBackgroundColor: '#B76E79',
+        fill: true,
+        tension: 0.3,
+      },
+      {
+        label: 'Rx Limit',
+        data: [],
+        borderColor: 'rgba(231,76,60,0.65)',
+        borderWidth: 1.5,
+        borderDash: [6, 4],
+        pointRadius: 0,
+        fill: false,
+        tension: 0,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 250 },
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: 'rgba(26,37,53,0.95)',
+        titleColor: '#B76E79',
+        bodyColor: '#f0e8ea',
+        borderColor: 'rgba(183,110,121,0.3)',
+        borderWidth: 1,
+        padding: 12,
+        callbacks: {
+          label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} dBm`
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: { color: 'rgba(255,255,255,0.05)' },
+        ticks: { color: 'rgba(240,232,234,0.45)', font: { family: 'Space Mono', size: 9 }, maxTicksLimit: 8 },
+        title: { display: true, text: 'Distance (km)', color: 'rgba(240,232,234,0.4)', font: { size: 10 } }
+      },
+      y: {
+        grid: { color: 'rgba(255,255,255,0.05)' },
+        ticks: { color: 'rgba(240,232,234,0.45)', font: { family: 'Space Mono', size: 9 }, callback: v => v + ' dB' },
+        title: { display: true, text: 'Power (dBm)', color: 'rgba(240,232,234,0.4)', font: { size: 10 } }
+      }
+    }
+  }
+});
+
+// ── Compute & update ──
+function compute() {
+  const { ptx, len, att, spl, con, mar, br, dc, sw } = state;
+
+  // Link loss
+  const fiberLoss = len * att;
+  const spliceLoss = spl * 0.1;
+  const connLoss = con * 0.5;
+  const totalLoss = fiberLoss + spliceLoss + connLoss + mar;
+  const prx = ptx - totalLoss;
+
+  // Dispersion
+  const T_ps = (1 / (br * 1e9)) * 1e12; // bit period in ps
+  const broadening_ps = dc * len * sw;   // ps
+
+  const ratio = broadening_ps / T_ps;
+
+  // Verdict
+  const powerOK = prx > -30;
+  const dispOK  = ratio < 0.7;
+
+  let vClass, vIcon, vTitle, vDesc;
+  if (!powerOK) {
+    vClass = 'danger';
+    vIcon  = '🔴';
+    vTitle = 'SIGNAL CRITICAL';
+    vDesc  = `Received power (${prx.toFixed(2)} dBm) is below the −30 dBm threshold. Reduce link length or increase transmit power.`;
+  } else if (!dispOK) {
+    vClass = 'warning';
+    vIcon  = '🟠';
+    vTitle = 'BANDWIDTH LIMITED';
+    vDesc  = `Pulse broadening (${broadening_ps.toFixed(1)} ps) exceeds 70% of the bit period (${T_ps.toFixed(1)} ps). Reduce dispersion or bit rate.`;
+  } else {
+    vClass = 'success';
+    vIcon  = '✅';
+    vTitle = 'LINK SUCCESS';
+    vDesc  = `System operating within limits. P_rx = ${prx.toFixed(2)} dBm, broadening ratio = ${(ratio*100).toFixed(1)}%.`;
+  }
+
+  // Update cards
+  document.getElementById('card-loss').textContent = totalLoss.toFixed(2);
+  document.getElementById('card-prx').textContent  = prx.toFixed(2);
+  document.getElementById('card-disp').textContent = broadening_ps.toFixed(1);
+
+  // Color card-prx
+  const prxEl = document.getElementById('card-prx');
+  prxEl.style.color = prx > -30 ? '#4ecdc4' : '#e74c3c';
+
+  // Dispersion detail
+  document.getElementById('d-T').textContent     = T_ps.toFixed(1);
+  document.getElementById('d-broad').textContent = broadening_ps.toFixed(1);
+  document.getElementById('d-ratio').textContent = ratio.toFixed(3);
+  const dStatusEl = document.getElementById('d-status');
+  if (ratio < 0.5) {
+    dStatusEl.textContent = 'OK'; dStatusEl.style.color = '#4ecdc4';
+  } else if (ratio < 0.7) {
+    dStatusEl.textContent = 'MARGINAL'; dStatusEl.style.color = '#f39c12';
+  } else {
+    dStatusEl.textContent = 'LIMITED'; dStatusEl.style.color = '#e74c3c';
+  }
+
+  // Verdict badge
+  const badge = document.getElementById('verdict-badge');
+  badge.className = 'verdict-badge ' + vClass;
+  document.getElementById('verdict-icon').textContent  = vIcon;
+  document.getElementById('verdict-title').textContent = vTitle;
+  document.getElementById('verdict-desc').textContent  = vDesc;
+  document.getElementById('vm-prx').textContent   = prx.toFixed(2);
+  document.getElementById('vm-disp').textContent  = broadening_ps.toFixed(1);
+  document.getElementById('vm-T').textContent     = T_ps.toFixed(1);
+
+  // Chart data
+  const steps = 60;
+  const labels = [];
+  const powerData = [];
+  const limitData = [];
+  for (let i = 0; i <= steps; i++) {
+    const d = (len / steps) * i;
+    labels.push(d.toFixed(1));
+    const p = ptx - (d * att) - spliceLoss - connLoss - mar;
+    powerData.push(parseFloat(p.toFixed(3)));
+    limitData.push(-30);
+  }
+
+  chart.data.labels = labels;
+  chart.data.datasets[0].data = powerData;
+  chart.data.datasets[1].data = limitData;
+  chart.update();
+}
+
+function resetAll() {
+  Object.assign(state, defaults);
+  sliders.forEach(({ id, key, label, fmt }) => {
+    const el = document.getElementById(id);
+    el.value = defaults[key];
+    document.getElementById(label).textContent = fmt(defaults[key]);
+    updateSliderBg(el);
+  });
+  compute();
+}
+
+// Init
+compute();
+</script>
+</body>
+</html>
