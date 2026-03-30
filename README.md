@@ -63,6 +63,7 @@ Dispersion exceeds bit period
 
 🎨 UI & Design:
 
+Dark and Light theme options provided.
 Theme: Rose Gold & Charcoal,
 Rose Gold: #B76E79,
 White: #FFFFFF,
