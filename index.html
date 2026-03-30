@@ -24,6 +24,45 @@
     --danger: #e74c3c;
     --warning: #f39c12;
     --sidebar-w: 320px;
+    --bg: linear-gradient(135deg, #1a2535 0%, #2C3E50 50%, #1e2d3d 100%);
+    --panel-bg: rgba(26,37,53,0.7);
+    --panel-border: rgba(255,255,255,0.12);
+    --bg-overlay: radial-gradient(ellipse 60% 50% at 15% 20%, rgba(183,110,121,0.12) 0%, transparent 60%), radial-gradient(ellipse 50% 60% at 85% 80%, rgba(44,62,80,0.8) 0%, transparent 60%), var(--bg);
+    --grid-color: rgba(183,110,121,0.04);
+    --chart-tick-color: rgba(240,232,234,0.45);
+    --chart-title-color: rgba(240,232,234,0.4);
+    --chart-grid-color: rgba(255,255,255,0.05);
+    --chart-tooltip-bg: rgba(26,37,53,0.95);
+    --chart-tooltip-text: #f0e8ea;
+    --range-track-bg: rgba(255,255,255,0.15);
+    --range-thumb-border: var(--white);
+  }
+
+  [data-theme="light"] {
+    --rose: #b76e79;
+    --rose-light: #d99ea3;
+    --rose-dim: rgba(219,163,170,0.35);
+    --rose-glow: rgba(222,165,164,0.45);
+    --charcoal: #f7ede8;
+    --charcoal-light: #fff9f5;
+    --charcoal-dark: #e8d6d0;
+    --white: #2d1b1b;
+    --glass: rgba(255,255,255,0.95);
+    --glass-border: rgba(215,152,145,0.45);
+    --text-primary: #3d1f20;
+    --text-secondary: rgba(61,31,32,0.78);
+    --bg: linear-gradient(135deg, #fdf6f4 0%, #f5e1de 50%, #e9d0cc 100%);
+    --panel-bg: rgba(255,248,246,0.92);
+    --panel-border: rgba(215,152,145,0.4);
+    --bg-overlay: radial-gradient(ellipse 60% 50% at 15% 20%, rgba(255,210,206,0.25) 0%, transparent 60%), radial-gradient(ellipse 50% 60% at 85% 80%, rgba(245,223,218,0.6) 0%, transparent 60%), var(--bg);
+    --grid-color: rgba(215,152,145,0.13);
+    --chart-tick-color: rgba(61,31,32,0.78);
+    --chart-title-color: rgba(61,31,32,0.55);
+    --chart-grid-color: rgba(61,31,32,0.12);
+    --chart-tooltip-bg: rgba(61,31,32,0.92);
+    --chart-tooltip-text: #fff4ee;
+    --range-track-bg: rgba(48,22,22,0.25);
+    --range-thumb-border: #2d1b1b;
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -31,7 +70,7 @@
   html, body {
     height: 100%;
     font-family: 'DM Sans', sans-serif;
-    background: var(--charcoal-dark);
+    background: var(--bg);
     color: var(--text-primary);
     overflow: hidden;
   }
@@ -41,10 +80,7 @@
     content: '';
     position: fixed;
     inset: 0;
-    background:
-      radial-gradient(ellipse 60% 50% at 15% 20%, rgba(183,110,121,0.12) 0%, transparent 60%),
-      radial-gradient(ellipse 50% 60% at 85% 80%, rgba(44,62,80,0.8) 0%, transparent 60%),
-      linear-gradient(135deg, #1a2535 0%, #2C3E50 50%, #1e2d3d 100%);
+    background: var(--bg-overlay);
     z-index: 0;
     pointer-events: none;
   }
@@ -55,8 +91,8 @@
     position: fixed;
     inset: 0;
     background-image:
-      linear-gradient(rgba(183,110,121,0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(183,110,121,0.04) 1px, transparent 1px);
+      linear-gradient(var(--grid-color) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
     background-size: 40px 40px;
     z-index: 0;
     pointer-events: none;
@@ -76,10 +112,10 @@
     min-width: var(--sidebar-w);
     height: 100vh;
     overflow-y: auto;
-    background: rgba(26, 37, 53, 0.7);
+    background: var(--panel-bg);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border-right: 1px solid var(--glass-border);
+    border-right: 1px solid var(--panel-border);
     display: flex;
     flex-direction: column;
     padding: 0;
@@ -121,6 +157,29 @@
     font-size: 11px;
     color: var(--text-secondary);
     margin-top: 4px;
+  }
+
+  .theme-toggle {
+    margin-top: 14px;
+    padding: 8px 12px;
+    border: 1px solid var(--panel-border);
+    background: var(--glass);
+    color: var(--text-primary);
+    border-radius: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
+  }
+
+  .theme-toggle:hover {
+    background: rgba(255,255,255,0.2);
+    transform: translateY(-1px);
+  }
+
+  .theme-toggle:focus {
+    outline: 2px solid var(--rose);
+    outline-offset: 2px;
   }
 
   .section-label {
@@ -173,23 +232,25 @@
   }
 
   input[type="range"] {
+    appearance: none;
     -webkit-appearance: none;
     width: 100%;
-    height: 4px;
-    background: linear-gradient(to right, var(--rose) var(--pct, 0%), rgba(255,255,255,0.1) var(--pct, 0%));
-    border-radius: 2px;
+    height: 6px;
+    background: linear-gradient(to right, var(--rose) var(--pct, 0%), var(--range-track-bg) var(--pct, 0%));
+    border-radius: 3px;
     outline: none;
     cursor: pointer;
     transition: background 0.1s;
   }
 
   input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
     -webkit-appearance: none;
     width: 16px;
     height: 16px;
     border-radius: 50%;
     background: var(--rose);
-    border: 2px solid var(--white);
+    border: 2px solid var(--range-thumb-border);
     box-shadow: 0 0 10px var(--rose-glow);
     cursor: pointer;
     transition: transform 0.15s, box-shadow 0.15s;
@@ -204,7 +265,7 @@
     width: 16px; height: 16px;
     border-radius: 50%;
     background: var(--rose);
-    border: 2px solid var(--white);
+    border: 2px solid var(--range-thumb-border);
     box-shadow: 0 0 10px var(--rose-glow);
     cursor: pointer;
   }
@@ -632,9 +693,10 @@
   <!-- ══════════════ SIDEBAR ══════════════ -->
   <aside id="sidebar">
     <div class="sidebar-header">
-      <span class="course-tag">21ECO105T — Optical Communications</span>
+      <span class="course-tag">Optical Communications</span>
       <h2>Link Design & Analysis</h2>
       <p>Configure parameters below — dashboard updates live</p>
+      <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark/light mode">🌙 Toggle theme</button>
     </div>
 
     <!-- Power Budget Inputs -->
@@ -861,6 +923,7 @@ sliders.forEach(({ id, key, label, fmt }) => {
 });
 
 // ── Chart setup ──
+const getThemeVar = (property) => getComputedStyle(document.documentElement).getPropertyValue(property).trim();
 const ctx = document.getElementById('linkChart').getContext('2d');
 const chart = new Chart(ctx, {
   type: 'line',
@@ -899,9 +962,9 @@ const chart = new Chart(ctx, {
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: 'rgba(26,37,53,0.95)',
-        titleColor: '#B76E79',
-        bodyColor: '#f0e8ea',
+        backgroundColor: getThemeVar('--chart-tooltip-bg'),
+        titleColor: getThemeVar('--rose'),
+        bodyColor: getThemeVar('--chart-tooltip-text'),
         borderColor: 'rgba(183,110,121,0.3)',
         borderWidth: 1,
         padding: 12,
@@ -912,20 +975,53 @@ const chart = new Chart(ctx, {
     },
     scales: {
       x: {
-        grid: { color: 'rgba(255,255,255,0.05)' },
-        ticks: { color: 'rgba(240,232,234,0.45)', font: { family: 'Space Mono', size: 9 }, maxTicksLimit: 8 },
-        title: { display: true, text: 'Distance (km)', color: 'rgba(240,232,234,0.4)', font: { size: 10 } }
+        grid: { color: getThemeVar('--chart-grid-color') },
+        ticks: { color: getThemeVar('--chart-tick-color'), font: { family: 'Space Mono', size: 9 }, maxTicksLimit: 8 },
+        title: { display: true, text: 'Distance (km)', color: getThemeVar('--chart-title-color'), font: { size: 10 } }
       },
       y: {
-        grid: { color: 'rgba(255,255,255,0.05)' },
-        ticks: { color: 'rgba(240,232,234,0.45)', font: { family: 'Space Mono', size: 9 }, callback: v => v + ' dB' },
-        title: { display: true, text: 'Power (dBm)', color: 'rgba(240,232,234,0.4)', font: { size: 10 } }
+        grid: { color: getThemeVar('--chart-grid-color') },
+        ticks: { color: getThemeVar('--chart-tick-color'), font: { family: 'Space Mono', size: 9 }, callback: v => v + ' dB' },
+        title: { display: true, text: 'Power (dBm)', color: getThemeVar('--chart-title-color'), font: { size: 10 } }
       }
     }
   }
 });
 
-// ── Compute & update ──
+function updateChartTheme() {
+  chart.options.plugins.tooltip.backgroundColor = getThemeVar('--chart-tooltip-bg');
+  chart.options.plugins.tooltip.bodyColor = getThemeVar('--chart-tooltip-text');
+  chart.options.plugins.tooltip.titleColor = getThemeVar('--rose');
+  chart.options.scales.x.grid.color = getThemeVar('--chart-grid-color');
+  chart.options.scales.y.grid.color = getThemeVar('--chart-grid-color');
+  chart.options.scales.x.ticks.color = getThemeVar('--chart-tick-color');
+  chart.options.scales.y.ticks.color = getThemeVar('--chart-tick-color');
+  chart.options.scales.x.title.color = getThemeVar('--chart-title-color');
+  chart.options.scales.y.title.color = getThemeVar('--chart-title-color');
+  chart.update();
+}
+
+// ── Theme setup ──
+  const themeToggle = document.getElementById('theme-toggle');
+  const savedTheme = localStorage.getItem('dashboardTheme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
+
+  const applyTheme = (theme) => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('dashboardTheme', theme);
+    themeToggle.textContent = theme === 'dark' ? '☀️ Light mode' : '🌙 Dark mode';
+    updateChartTheme();
+  };
+
+  applyTheme(initialTheme);
+
+  themeToggle.addEventListener('click', () => {
+    const nextTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    applyTheme(nextTheme);
+  });
+
+  // ── Compute & update ──
 function compute() {
   const { ptx, len, att, spl, con, mar, br, dc, sw } = state;
 
